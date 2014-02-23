@@ -42,3 +42,12 @@ These are not going to get implemented off the bat, but will be:
 
 * Ability to store a mapping of hostnames to real people
 * Flag to turn on/off MAC address masking
+
+### Requirements
+
+* A Limnoria IRC bot. (I'm not using any of the Limnoria-specific features,
+ so Supybot should work as well.)
+
+#### Python libraries required:
+
+* pyparsing
