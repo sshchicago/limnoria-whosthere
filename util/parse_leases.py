@@ -16,6 +16,7 @@ import datetime
 import time
 import calendar
 import ipaddr
+import sys
 
 # TODO: These need to be command-line parameters:
 LEASEFILE='dhcpd.leases'
@@ -88,9 +89,6 @@ class dhcpd_parser:
             if self.lease_active(start, end) and self.lease_in_range(lease['ip']):
                 self.lt_cursor.execute('''INSERT OR REPLACE INTO leases VALUES (?, ?, ?, ?, ?, ?)''', t)
                 self.lt_conn.commit()
-            else:
-                print "Skipping time %s->%s, expired (time now is %s)" % (start, end, time.time())
-
         return
 
 
@@ -99,7 +97,6 @@ class dhcpd_parser:
         Converts a parsed date from pyparser in the wacky format that's stored in
         ISC databases, and returns it as epoch time.
         """
-        print parsed_date
         tdate = parsed_date[1]
         ttime = parsed_date[2]
         t = time.strptime("%s %s" % (tdate, ttime), "%Y/%m/%d %H:%M:%S")
@@ -192,9 +189,21 @@ class dhcpd_parser:
         ip = ipaddr.IPNetwork(ipaddress)
         return ip.overlaps(network)
 
+def handle_commandline():
+    """
+    Handles the command line options.
+    """
+    if len(sys.argv) != 4:
+        print "Usage: %s dhcpd.leases_file output_file ip_range" % sys.argv[0]
+        print "Example:"
+        print " %s /tmp/dhcpd.leases /tmp/leases-out.sqlite 172.16.13.0/24" % sys.argv[0]
+    else:
+        return (sys.argv[1], sys.argv[2], sys.argv[3])
+
 
 if __name__ == "__main__":
-    parser = dhcpd_parser('/users/Chris/dhcpd.leases', 'leases.sqlite', '172.16.3.0/24')
+    opts = handle_commandline()
+    parser = dhcpd_parser(*opts)
     del(parser)
         
 
