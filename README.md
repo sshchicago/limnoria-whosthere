@@ -6,7 +6,7 @@ A Limnoria plugin that lists who has active DHCP leases
 
 ### Background
 
-One day in the #sshc IRC channel, a good-natured ribbing of who was spending lots of time in the space was brought up. While someone was denying that they had spent over 24 hours straight in the space, an idea came to mind - what if we just look at the DHCP lease table in the dynamic IP address range to see who's there? 
+One day in the #sshc IRC channel, a good-natured ribbing of who was spending lots of time in the space occurred. While someone was denying that they had spent over 24 hours straight in the space, an idea came to mind - what if we just look at the DHCP lease table in the dynamic IP address range to see who's there? 
 
 From that, this plugin was born. 
 
