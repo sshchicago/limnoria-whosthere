@@ -47,7 +47,6 @@ lease 192.168.0.239 {
 
 f = open('/Users/chris/dhcpd.leases')
 sample = f.read()
-print sample
 
 from pyparsing import *
 import datetime,time
@@ -63,16 +62,6 @@ yyyymmdd = Combine((Word(nums,exact=4)|Word(nums,exact=2))+
 hhmmss = Combine(Word(nums,exact=2)+(':'+Word(nums,exact=2))*2)
 dateRef = oneOf(list("0123456"))("weekday") + yyyymmdd("date") + \
                                                         hhmmss("time")
-
-def utcToLocalTime(tokens):
-    utctime = datetime.datetime.strptime("%(date)s %(time)s" % tokens,
-                                                    "%Y/%m/%d %H:%M:%S")
-    localtime = utctime-datetime.timedelta(0,time.timezone,0)
-    tokens["utcdate"],tokens["utctime"] = tokens["date"],tokens["time"]
-    tokens["localdate"],tokens["localtime"] = str(localtime).split()
-    del tokens["date"]
-    del tokens["time"]
-#dateRef.setParseAction(utcToLocalTime)
 
 startsStmt = "starts" + dateRef + SEMI
 endsStmt = "ends" + (dateRef | "never") + SEMI
@@ -94,14 +83,24 @@ leaseDef = "lease" + ipAddress("ipaddress") + LBRACE + \
                             Dict(ZeroOrMore(Group(leaseStatement))) + RBRACE
 
 
+leases = []
+starttime = time.time()
 for lease in leaseDef.searchString(sample):
-    print "mac text PRIMARY KEY| ip text| host text| lease_start text| lease_end text| last_interaction text"
+    thisLease = {}
+    thisLease['mac'] = lease.hardware.mac
+    thisLease['ip'] = lease.ipaddress
+    thisLease['host'] = lease.get('client-hostname')
+    thisLease['lease_start'] = lease.starts
+    thisLease['lease_end'] = lease.ends
+    thisLease['last_interaction'] = lease.cltt
+
     try:
         client_hostname = lease.client-hostname
     except NameError:
         client_hostname = None
-    print "%s | %s | %s | %s | %s | %s" % (lease.hardware.mac, lease.ipaddress, lease.get('client-hostname'), lease.starts, lease.ends, lease.cltt)
-#    print lease.dump()
-#    print lease.ipaddress,'->',lease.hardware.mac
-#    print
-    print 80*'='
+    leases.append(thisLease)
+
+parsetime = time.time() - starttime
+print "Took %s seconds to run." % parsetime
+#from pprint import pprint
+#pprint(leases)

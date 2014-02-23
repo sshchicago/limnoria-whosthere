@@ -15,6 +15,7 @@ from pyparsing import *
 import datetime
 import time
 import calendar
+import ipaddr
 
 # TODO: These need to be command-line parameters:
 LEASEFILE='dhcpd.leases'
@@ -26,15 +27,23 @@ class dhcpd_parser:
     lt_conn = None
     lt_cursor = None
 
+    __ip_range = None
+    __leasefile = None
+    __outfile = None
+    
 
-    def __init__(self):
+
+    def __init__(self, lease_file, sqlite_output, ip_range):
         # Read in the lease table in ISC format
         # Set up the sqlite cursor
         # Create the empty table within
-        self.lt_conn = sqlite3.connect('leases.sqlite')
+        self.__ip_range = ip_range
+        self.__leasefile = lease_file
+        self.__outfile = sqlite_output
+        self.lt_conn = sqlite3.connect(self.__outfile)
         self.lt_cursor = self.lt_conn.cursor()
         self.create_lease_table_sql()
-        self.build_lease_table('/users/Chris/dhcpd.leases')
+        self.build_lease_table(self.__leasefile)
 
     def __del__(self):
         # Destructor.
@@ -44,6 +53,9 @@ class dhcpd_parser:
     def create_lease_table_sql(self):
         # Do stuff
         # Delete the table if it exists:
+        # XXX: If this application crashes and leaves a lock on the sqlite file, you'll have problems:
+        # sqlite3.OperationalError: database is locked
+        # Probably easiest just to nuke the file altogether. 
         self.lt_cursor.execute('''DROP TABLE IF EXISTS leases''')
         # XXX: Warning: Naively presuming that MAC addresses are unique.
         # Actually, both mac AND IP should be unique.
@@ -73,8 +85,11 @@ class dhcpd_parser:
             end = self.convert_parsed_date_to_epoch(lease['lease_end'])
             li = self.convert_parsed_date_to_epoch(lease['last_interaction'])
             t = (lease['mac'], lease['ip'], lease['host'], start, end, li)
-            self.lt_cursor.execute('''INSERT OR REPLACE INTO leases VALUES (?, ?, ?, ?, ?, ?)''', t)
-            self.lt_conn.commit()
+            if self.lease_active(start, end) and self.lease_in_range(lease['ip']):
+                self.lt_cursor.execute('''INSERT OR REPLACE INTO leases VALUES (?, ?, ?, ?, ?, ?)''', t)
+                self.lt_conn.commit()
+            else:
+                print "Skipping time %s->%s, expired (time now is %s)" % (start, end, time.time())
 
         return
 
@@ -89,8 +104,6 @@ class dhcpd_parser:
         ttime = parsed_date[2]
         t = time.strptime("%s %s" % (tdate, ttime), "%Y/%m/%d %H:%M:%S")
         return calendar.timegm(t)
-
-
 
 
     def build_lease_list(self, isc_lease_table_filename):
@@ -163,4 +176,25 @@ class dhcpd_parser:
         Given a lease start and end time (both in UTC), determine if this lease is still
         valid. Returns true or false.
         """
+        # start_time and end_time should be epoch time in UTC.
+        time_now = time.time()
+
+        if (time_now < end_time and time_now > start_time):
+            return True
+        return False
+
+    def lease_in_range(self, ipaddress):
+        """
+        Checks if ipaddress is within DYNAMIC_IP_RANGE
+        """
+
+        network = ipaddr.IPNetwork(self.__ip_range)
+        ip = ipaddr.IPNetwork(ipaddress)
+        return ip.overlaps(network)
+
+
+if __name__ == "__main__":
+    parser = dhcpd_parser('/users/Chris/dhcpd.leases', 'leases.sqlite', '172.16.3.0/24')
+    del(parser)
+        
 

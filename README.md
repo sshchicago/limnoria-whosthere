@@ -51,3 +51,4 @@ These are not going to get implemented off the bat, but will be:
 #### Python libraries required:
 
 * pyparsing
+* ipaddr
