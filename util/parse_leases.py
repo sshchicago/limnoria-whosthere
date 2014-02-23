@@ -70,7 +70,11 @@ class dhcpd_parser:
         lease_list = self.build_lease_list(isc_lease_table_filename)
         for lease in lease_list:
             start = self.convert_parsed_date_to_epoch(lease['lease_start'])
-            print start
+            end = self.convert_parsed_date_to_epoch(lease['lease_end'])
+            li = self.convert_parsed_date_to_epoch(lease['last_interaction'])
+            t = (lease['mac'], lease['ip'], lease['host'], start, end, li)
+            self.lt_cursor.execute('''INSERT OR REPLACE INTO leases VALUES (?, ?, ?, ?, ?, ?)''', t)
+            self.lt_conn.commit()
 
         return
 
