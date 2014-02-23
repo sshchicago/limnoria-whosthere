@@ -18,10 +18,6 @@ import calendar
 import ipaddr
 import sys
 
-# TODO: These need to be command-line parameters:
-LEASEFILE='dhcpd.leases'
-DYNAMIC_IP_RANGE='172.16.3.0/24'
-
 class dhcpd_parser:
 
     lease_table_string = ""
