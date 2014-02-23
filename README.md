@@ -17,13 +17,15 @@ Since the DHCP server is considered a "trusted" host, and the IRC bot is on a no
 For our design, we use a host called "`monkey`" that sits on the trusted network.
 
 These tasks are run on a schedule:
-# `monkey` logs into the DHCP server, and pulls the lease pool database
-# `monkey` reads the lease pool database, focuses on the dynamic DHCP range, does DNS lookups as a last-ditch effort to add in missing hostnames, and stores the data structure of the information to a pickle file
-# `monkey` SCPs the resulting picklefile to the server running the IRC bot
+
+1. `monkey` logs into the DHCP server, and pulls the lease pool database
+2. `monkey` reads the lease pool database, focuses on the dynamic DHCP range, does DNS lookups as a last-ditch effort to add in missing hostnames, and stores the data structure of the information to a pickle file
+3. `monkey` SCPs the resulting picklefile to the server running the IRC bot
 
 The IRC bot then:
-# When prompted, loads the picklefile that was SCP'd from `monkey`
-# Dumps out active leases.
+
+1. When prompted, loads the picklefile that was SCP'd from `monkey`
+2. Dumps out active leases.
 
 Since only `monkey` has private keys to the DHCP server and the IRC bot server, compromising the IRC bot or the server it runs on will not compromise access to the DHCP server.
 
