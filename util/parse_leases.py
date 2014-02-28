@@ -172,9 +172,7 @@ class dhcpd_parser:
         # start_time and end_time should be epoch time in UTC.
         time_now = time.time()
 
-        if (time_now < end_time and time_now > start_time):
-            return True
-        return False
+        return time_now < end_time and time_now > start_time
 
     def lease_in_range(self, ipaddress):
         """
